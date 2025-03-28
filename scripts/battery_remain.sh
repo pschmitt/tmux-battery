@@ -17,7 +17,7 @@ battery_discharging() {
 
 battery_charged() {
 	local status="$(battery_status)"
-	[[ $status =~ (charged) ]]
+	[[ $status =~ (charged) || $status =~ (full) ]]
 }
 
 
@@ -106,11 +106,17 @@ upower_battery_remaining_time() {
 }
 
 acpi_battery_remaining_time() {
-	acpi -b | grep -m 1 -Eo "[0-9]+:[0-9]+:[0-9]+"
+	regex="[0-9]+:[0-9]+"
+	if ! $short; then
+		regex="$regex:[0-9]+"
+	fi
+	acpi -b | grep -m 1 -Eo "$regex"
 }
 
 print_battery_remain() {
-	if command_exists "pmset"; then
+	if is_wsl; then
+		echo "?"	# currently unsupported on WSL
+	elif command_exists "pmset"; then
 		pmset_battery_remaining_time
 	elif command_exists "acpi"; then
 		acpi_battery_remaining_time
