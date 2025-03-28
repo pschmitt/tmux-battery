@@ -31,13 +31,19 @@ is_wsl() {
 	fi
 }
 
+is_termux() {
+  [[ $(uname -o) == "Android" ]] && command -v termux-info >/dev/null 2>&1
+}
+
 command_exists() {
 	local command="$1"
 	type "$command" >/dev/null 2>&1
 }
 
 battery_status() {
-	if is_wsl; then
+	if is_termux; then
+    termux-battery-status | jq -er '.status | ascii_downcase'
+	elif is_wsl; then
 		local battery
 		battery=$(find /sys/class/power_supply/*/status | tail -n1)
 		awk '{print tolower($0);}' "$battery"
