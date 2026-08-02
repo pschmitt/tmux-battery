@@ -42,8 +42,20 @@ set_tmux_option() {
 
 do_interpolation() {
 	local all_interpolated="$1"
+	local battery_available
+
+	if has_battery
+	then
+		battery_available=1
+	fi
+
 	for ((i=0; i<${#battery_commands[@]}; i++)); do
-		all_interpolated=${all_interpolated//${battery_interpolation[$i]}/${battery_commands[$i]}}
+		if [[ -n "$battery_available" ]]
+		then
+			all_interpolated=${all_interpolated//${battery_interpolation[$i]}/${battery_commands[$i]}}
+		else
+			all_interpolated=${all_interpolated//${battery_interpolation[$i]}/}
+		fi
 	done
 	echo "$all_interpolated"
 }

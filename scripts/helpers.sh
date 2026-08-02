@@ -40,6 +40,50 @@ command_exists() {
 	type "$command" >/dev/null 2>&1
 }
 
+has_battery() {
+	local type_file
+
+	for type_file in /sys/class/power_supply/*/type
+	do
+		if [[ -r "$type_file" ]] && [[ "$(<"$type_file")" == Battery ]]
+		then
+			return 0
+		fi
+	done
+
+	if is_osx
+	then
+		pmset -g batt 2>/dev/null | grep -qE '[0-9]+%'
+		return
+	fi
+
+	if command_exists acpi
+	then
+		acpi -b 2>/dev/null | grep -qE '[0-9]+%'
+		return
+	fi
+
+	if command_exists upower
+	then
+		upower -e 2>/dev/null | grep -qE '/battery_[^/]+$'
+		return
+	fi
+
+	if is_termux || command_exists termux-battery-status
+	then
+		termux-battery-status >/dev/null 2>&1
+		return
+	fi
+
+	if command_exists apm
+	then
+		apm -a >/dev/null 2>&1
+		return
+	fi
+
+	return 1
+}
+
 battery_status() {
 	if is_termux; then
     termux-battery-status | jq -er '.status | ascii_downcase'
