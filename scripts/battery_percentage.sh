@@ -5,6 +5,11 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$CURRENT_DIR/helpers.sh"
 
 print_battery_percentage() {
+	local bat
+	if bat="$(get_system_battery 2>/dev/null)" && [[ -n "$bat" && -r "$bat/capacity" ]]; then
+		echo "$(<"$bat/capacity")%"
+		return
+	fi
 	# percentage displayed in the 2nd field of the 2nd row
 	if is_termux; then
     termux-battery-status | jq -er '"\(.percentage)%"'
@@ -15,7 +20,7 @@ print_battery_percentage() {
 	elif command_exists "pmset"; then
 		pmset -g batt | grep -o "[0-9]\{1,3\}%"
 	elif command_exists "acpi"; then
-		acpi -b | grep -m 1 -Eo "[0-9]+%"
+		acpi -b | grep -v "rate information unavailable" | grep -m 1 -Eo "[0-9]+%"
 	elif command_exists "upower"; then
         # use DisplayDevice if available otherwise battery
 		local battery=$(upower -e | grep -E 'battery|DisplayDevice'| tail -n1)

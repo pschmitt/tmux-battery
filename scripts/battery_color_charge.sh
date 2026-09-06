@@ -69,20 +69,20 @@ print_color_charge() {
 		secondary_plane="bg"
 	fi
 	percentage=$($CURRENT_DIR/battery_percentage.sh | sed -e 's/%//')
-	if [ $percentage -ge 95 -o "$percentage" == "" ]; then
+	if [[ -z "$percentage" || "$percentage" -ge 95 ]]; then
 		# if percentage is empty, assume it's a desktop
 		printf "#[$primary_plane=$color_charge_primary_tier8${color_charge_secondary_tier8:+",$secondary_plane=$color_charge_secondary_tier8"}]"
-	elif [ $percentage -ge 80 ]; then
+	elif [ "$percentage" -ge 80 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier7${color_charge_secondary_tier7:+",$secondary_plane=$color_charge_secondary_tier7"}]"
-	elif [ $percentage -ge 65 ]; then
+	elif [ "$percentage" -ge 65 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier6${color_charge_secondary_tier6:+",$secondary_plane=$color_charge_secondary_tier6"}]"
-	elif [ $percentage -ge 50 ]; then
+	elif [ "$percentage" -ge 50 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier5${color_charge_secondary_tier5:+",$secondary_plane=$color_charge_secondary_tier5"}]"
-	elif [ $percentage -ge 35 ]; then
+	elif [ "$percentage" -ge 35 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier4${color_charge_secondary_tier4:+",$secondary_plane=$color_charge_secondary_tier4"}]"
-	elif [ $percentage -ge 20 ]; then
+	elif [ "$percentage" -ge 20 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier3${color_charge_secondary_tier3:+",$secondary_plane=$color_charge_secondary_tier3"}]"
-	elif [ $percentage -gt 5 ]; then
+	elif [ "$percentage" -gt 5 ]; then
 		printf "#[$primary_plane=$color_charge_primary_tier2${color_charge_secondary_tier2:+",$secondary_plane=$color_charge_secondary_tier2"}]"
 	else
 		printf "#[$primary_plane=$color_charge_primary_tier1${color_charge_secondary_tier1:+",$secondary_plane=$color_charge_secondary_tier1"}]"

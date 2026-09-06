@@ -40,16 +40,32 @@ command_exists() {
 	type "$command" >/dev/null 2>&1
 }
 
-has_battery() {
-	local type_file
-
-	for type_file in /sys/class/power_supply/*/type
-	do
-		if [[ -r "$type_file" ]] && [[ "$(<"$type_file")" == Battery ]]
-		then
+get_system_battery() {
+	local b
+	for b in /sys/class/power_supply/BAT* /sys/class/power_supply/bat* /sys/class/power_supply/battery*; do
+		if [[ -d "$b" && -r "$b/capacity" ]]; then
+			echo "$b"
 			return 0
 		fi
 	done
+	for b in /sys/class/power_supply/*; do
+		if [[ -d "$b" && -r "$b/capacity" && -r "$b/type" ]]; then
+			local b_type b_scope
+			b_type="$(<"$b/type")"
+			b_scope="$(cat "$b/scope" 2>/dev/null)"
+			if [[ "$b_type" == "Battery" && "$b_scope" != "Device" ]]; then
+				echo "$b"
+				return 0
+			fi
+		fi
+	done
+	return 1
+}
+
+has_battery() {
+	if get_system_battery >/dev/null 2>&1; then
+		return 0
+	fi
 
 	if is_osx
 	then
@@ -59,7 +75,7 @@ has_battery() {
 
 	if command_exists acpi
 	then
-		acpi -b 2>/dev/null | grep -qE '[0-9]+%'
+		acpi -b 2>/dev/null | grep -v "rate information unavailable" | grep -qE '[0-9]+%'
 		return
 	fi
 
@@ -85,6 +101,11 @@ has_battery() {
 }
 
 battery_status() {
+	local bat
+	if bat="$(get_system_battery 2>/dev/null)" && [[ -n "$bat" && -r "$bat/status" ]]; then
+		awk '{print tolower($0);}' "$bat/status"
+		return
+	fi
 	if is_termux; then
     termux-battery-status | jq -er '.status | ascii_downcase'
 	elif is_wsl; then
@@ -94,7 +115,7 @@ battery_status() {
 	elif command_exists "pmset"; then
 		pmset -g batt | awk -F '; *' 'NR==2 { print $2 }'
 	elif command_exists "acpi"; then
-		acpi -b | awk '{gsub(/,/, ""); print tolower($3); exit}'
+		acpi -b | grep -v "rate information unavailable" | awk '{gsub(/,/, ""); print tolower($3); exit}'
 	elif command_exists "upower"; then
 		local battery
 		battery=$(upower -e | grep -E 'battery|DisplayDevice'| tail -n1)
