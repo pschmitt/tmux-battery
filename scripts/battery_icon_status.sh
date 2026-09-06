@@ -53,6 +53,11 @@ print_icon_status() {
 }
 
 main() {
+	local percentage
+	percentage="$($CURRENT_DIR/battery_percentage.sh)"
+	if [[ -z "$percentage" ]]; then
+		return
+	fi
 	get_icon_status_settings
 	local status=${1:-$(battery_status)}
 	print_icon_status "$status"
